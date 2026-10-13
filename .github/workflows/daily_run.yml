@@ -4,17 +4,20 @@ on:
   schedule:
     # 每週六 UTC 01:00 (香港時間週六 09:00) 自動發送週報
     - cron: '0 1 * * 6'
-  workflow_dispatch: # 依然保留手動點擊按鈕隨時測試
+  workflow_dispatch: # 支援手動隨時觸發
+
+permissions:
+  contents: write # 授予 Actions 自動提交 state.json 的權限
 
 jobs:
   check-indicators:
     runs-on: ubuntu-latest
     steps:
       - name: 檢出儲存庫
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 設置 Python 環境
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -28,3 +31,10 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python monitor_engine.py
+
+      - name: 自動保存狀態記憶 (Commit state.json)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: persist monitor state [skip ci]" && git push)
