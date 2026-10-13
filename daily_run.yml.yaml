@@ -1,0 +1,30 @@
+name: Run Macro AI Capex Monitor
+
+on:
+  schedule:
+    # 每天 UTC 01:00 (台灣/香港時間 09:00) 自動執行
+    - cron: '0 1 * * *'
+  workflow_dispatch: # 支援在 GitHub 網頁手動點擊觸發
+
+jobs:
+  check-indicators:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 檢出儲存庫
+        uses: actions/checkout@v3
+
+      - name: 設置 Python 環境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 安裝相依套件
+        run: |
+          pip install requests
+
+      - name: 執行監控與警報判定
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python monitor_engine.py
