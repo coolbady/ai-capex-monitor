@@ -2,9 +2,9 @@ name: Run Macro AI Capex Monitor
 
 on:
   schedule:
-    # 每天 UTC 01:00 (香港時間 09:00) 自動執行
-    - cron: '0 1 * * *'
-  workflow_dispatch: # 支援手動按鍵執行
+    # 每週六 UTC 01:00 (香港時間週六 09:00) 自動發送週報
+    - cron: '0 1 * * 6'
+  workflow_dispatch: # 依然保留手動點擊按鈕隨時測試
 
 jobs:
   check-indicators:
