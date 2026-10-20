@@ -11,7 +11,9 @@ permissions:
 
 jobs:
   check-indicators:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: node24
     steps:
       - name: 檢出儲存庫
         uses: actions/checkout@v4
