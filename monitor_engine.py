@@ -108,7 +108,6 @@ def fetch_taiwan_odm_data(warning_th):
 # ==================== 3. ASML 淨預訂訂單出貨比 ====================
 def fetch_asml_book_to_bill():
     try:
-        # SEC EDGAR 接口 (CIK: 0000937966)
         url = "https://data.sec.gov/api/xbrl/companyfacts/CIK0000937966.json"
         res = requests.get(url, headers=SEC_HEADERS, timeout=12)
         if res.status_code == 200:
@@ -120,7 +119,6 @@ def fetch_asml_book_to_bill():
 # ==================== 4. 巨頭 Capex 剪刀差 ====================
 def fetch_hyperscaler_capex_scissor():
     try:
-        # SEC EDGAR 接口 (MSFT CIK: 0000789019)
         url = "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json"
         res = requests.get(url, headers=SEC_HEADERS, timeout=12)
         if res.status_code == 200:
@@ -138,7 +136,6 @@ def send_telegram_html(text):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("未設定 Telegram 憑證，略過發送。")
         return
-    # 徹底修復 $ 符號致命 Bug
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -172,8 +169,8 @@ def run_evaluation():
 
     indicators = []
 
-    # [維度 1] GPU 租金現貨 (加入跌速判定)
-    gpu_velocity_warning = gpu_drop_velocity >= 5.0  # 單週跌速 > 5% 觸發前瞻警訊
+    # [維度 1] GPU 租金現貨
+    gpu_velocity_warning = gpu_drop_velocity >= 5.0
     if gpu_price < 1.85:
         gpu_status, gpu_score = "🔴 見頂警報 (現貨深幅折價)", 25
     elif gpu_price <= 2.05 or gpu_velocity_warning:
@@ -192,7 +189,7 @@ def run_evaluation():
         "score": gpu_score
     })
 
-    # [維度 2] 台系 ODM 營收 (MoM 雙重過濾)
+    # [維度 2] 台系 ODM 營收
     if odm_mom < -2.0 and odm_yoy < 10.0:
         odm_status, odm_score = "🔴 見頂警報 (雙重失速)", 20
     elif odm_mom < cfg["odm_warning_threshold"]:
@@ -209,7 +206,7 @@ def run_evaluation():
         "score": odm_score
     })
 
-    # [維度 3] CoWoS 封裝交期 (供給擴產 vs 需求萎縮交叉解耦)
+    # [維度 3] CoWoS 封裝交期
     if cowos_weeks <= 20.0:
         if gpu_price < 1.85 or odm_mom < -2.0:
             cowos_status, cowos_score = "🔴 需求崩解 (交期急墜+價格失守)", 20
@@ -283,7 +280,7 @@ def run_evaluation():
 
     delta_text = f" (週變化: {'+' if score_delta > 0 else ''}{score_delta})" if score_delta != 0 else ""
 
-    # 4. 組裝 HTML 訊息 (安全防拒收)
+    # 4. 組裝 HTML 訊息（已將 <small> 替換為 <i>）
     msg = f"📊 <b>[AI Capex 宏觀見頂監控週報]</b>\n"
     msg += f"📅 時間: <code>{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}</code>\n"
     msg += f"🎯 綜合風險指數: <b>{adjusted_score} / 100</b>{delta_text} ({risk_label})\n"
@@ -294,7 +291,7 @@ def run_evaluation():
         msg += f"{ind['num']} <b>{ind['name']}</b>\n"
         msg += f"   • 狀態: {ind['status']}\n"
         msg += f"   • 當前值: <code>{ind['value']}</code>\n"
-        msg += f"   • 區間: <small>{ind['range']}</small>\n\n"
+        msg += f"   • 區間: <i>{ind['range']}</i>\n\n"
 
     msg += "━━━━━━━━━━━━━━━━━━━━\n"
     if critical_cnt > 0:
